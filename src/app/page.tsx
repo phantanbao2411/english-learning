@@ -46,9 +46,9 @@ export default function App() {
           setUserEmail(localUser);
           setUserId(`user_${localUser.split("@")[0]}`);
         } else {
-          // Default to first learner
-          setUserEmail("bao@english.app");
-          setUserId("user_bao");
+          // Default to phamphantanbao
+          setUserEmail("phamphantanbao@english.app");
+          setUserId("37801949-2f3f-4db2-9563-d27ec58852db");
         }
       }
     });

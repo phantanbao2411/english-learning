@@ -8,7 +8,16 @@ interface HeaderProps {
 }
 
 export function Header({ userEmail, onOpenAuth }: HeaderProps) {
-  const displayName = userEmail ? userEmail.split("@")[0] : "Người học";
+  let displayName = "Người học";
+  if (userEmail) {
+    if (userEmail.includes("phamphantanbao") || userEmail.toLowerCase().includes("bao")) {
+      displayName = "Tấn Bảo";
+    } else if (userEmail.includes("lethilethanh") || userEmail.toLowerCase().includes("thanh")) {
+      displayName = "Lệ Thanh";
+    } else {
+      displayName = userEmail.split("@")[0];
+    }
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
@@ -20,16 +29,16 @@ export function Header({ userEmail, onOpenAuth }: HeaderProps) {
           <h1 className="font-bold text-slate-900 text-sm leading-tight flex items-center gap-1">
             Học Tiếng Anh <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
           </h1>
-          <p className="text-[11px] text-slate-500 leading-none">Prepare L3 & Phát âm</p>
+          <p className="text-[11px] text-slate-500 leading-none">Prepare L3 & Phát âm 1vs1</p>
         </div>
       </div>
 
       <button
         onClick={onOpenAuth}
-        className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors text-xs font-medium"
+        className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors text-xs font-bold border border-blue-200/60 shadow-2xs"
       >
         <UserCircle2 className="w-4 h-4 text-blue-600" />
-        <span className="max-w-[100px] truncate">{displayName}</span>
+        <span className="max-w-[120px] truncate">{displayName}</span>
       </button>
     </header>
   );
