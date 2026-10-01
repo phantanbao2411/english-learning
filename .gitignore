@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Local env files
+.env*.local
+.env
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Large curriculum source files (keep local, not on git)
+*.pdf
+scratch/
+prepare_page_*.jpg
+prepare_page_*.png
+prepare_sample.txt
+prepare_toc.txt
+pronunciation_sample.txt
+pronunciation_toc.txt
+pronunciation_full.txt
