@@ -47,7 +47,7 @@ export async function fetchVocabularyByUnit(unitId: number, userId?: string): Pr
   // Try Supabase first if logged in
   if (userId) {
     try {
-      const { data } = await supabase
+      const { data } = await getSupabase()
         .from("vocabulary_progress")
         .select("vocabulary_id, status")
         .eq("user_id", userId);
@@ -150,7 +150,7 @@ export function formatMinutesToHours(totalMinutes: number): string {
 
 export async function fetchStudySessions(): Promise<StudySession[]> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("study_sessions")
       .select("*")
       .order("session_date", { ascending: false })
