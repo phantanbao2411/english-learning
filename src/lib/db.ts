@@ -3,7 +3,9 @@ import { Unit, VocabularyItem, PronunciationUnit, StudySession, VocabularyStatus
 import { PREPARE_UNITS, INITIAL_VOCABULARY } from "@/data/curriculum";
 import { PRONUNCIATION_UNITS } from "@/data/pronunciation";
 
-const supabase = createClient();
+function getSupabase() {
+  return createClient();
+}
 
 // STORAGE KEYS FOR LOCAL RESILIENCE / OFFLINE
 const LOCAL_VOCAB_PROGRESS_KEY = "eng_vocab_progress";
@@ -15,7 +17,7 @@ const LOCAL_SESSIONS_KEY = "eng_study_sessions";
 
 export async function fetchUnits(): Promise<Unit[]> {
   try {
-    const { data, error } = await supabase.from("units").select("*").order("unit_number");
+    const { data, error } = await getSupabase().from("units").select("*").order("unit_number");
     if (!error && data && data.length > 0) {
       return data as Unit[];
     }
@@ -29,7 +31,7 @@ export async function fetchVocabularyByUnit(unitId: number, userId?: string): Pr
   // Get base words
   let words: VocabularyItem[] = [];
   try {
-    const { data, error } = await supabase.from("vocabulary").select("*").eq("unit_id", unitId);
+    const { data, error } = await getSupabase().from("vocabulary").select("*").eq("unit_id", unitId);
     if (!error && data && data.length > 0) {
       words = data as VocabularyItem[];
     } else {
@@ -88,7 +90,7 @@ export async function saveVocabularyStatus(
   // Sync to Supabase if authenticated
   if (userId) {
     try {
-      await supabase.from("vocabulary_progress").upsert(
+      await getSupabase().from("vocabulary_progress").upsert(
         {
           user_id: userId,
           vocabulary_id: vocabularyId,
@@ -109,7 +111,7 @@ export async function saveVocabularyStatus(
 
 export async function fetchPronunciationUnits(): Promise<PronunciationUnit[]> {
   try {
-    const { data, error } = await supabase.from("pronunciation_units").select("*, sounds:pronunciation_sounds(*)").order("unit_number");
+    const { data, error } = await getSupabase().from("pronunciation_units").select("*, sounds:pronunciation_sounds(*)").order("unit_number");
     if (!error && data && data.length > 0) {
       return data as PronunciationUnit[];
     }
@@ -186,7 +188,7 @@ export async function saveStudySession(session: Omit<StudySession, "id"> & { id?
 
   // 1. Save to Supabase
   try {
-    const { data, error } = await supabase.from("study_sessions").insert([
+    const { data, error } = await getSupabase().from("study_sessions").insert([
       {
         id: newSession.id,
         teacher_name: newSession.teacher_name,
@@ -224,7 +226,7 @@ export async function saveStudySession(session: Omit<StudySession, "id"> & { id?
 
 export async function deleteStudySession(id: string): Promise<boolean> {
   try {
-    await supabase.from("study_sessions").delete().eq("id", id);
+    await getSupabase().from("study_sessions").delete().eq("id", id);
   } catch {}
 
   if (typeof window !== "undefined") {
