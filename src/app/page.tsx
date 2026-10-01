@@ -116,7 +116,9 @@ export default function App() {
               <PronunciationTab units={pronunciationUnits} />
             )}
 
-            {currentTab === "listening" && <ListeningTab />}
+            {currentTab === "listening" && (
+              <ListeningTab onBackToHome={() => setCurrentTab("home")} />
+            )}
 
             {currentTab === "schedule" && (
               <ScheduleTab sessions={sessions} onSessionsChange={setSessions} />
