@@ -109,11 +109,15 @@ export default function App() {
                 activeUnit={activeUnit}
                 onSelectUnit={setActiveUnit}
                 userId={userId}
+                onBackToHome={() => setCurrentTab("home")}
               />
             )}
 
             {currentTab === "pronunciation" && (
-              <PronunciationTab units={pronunciationUnits} />
+              <PronunciationTab
+                units={pronunciationUnits}
+                onBackToHome={() => setCurrentTab("home")}
+              />
             )}
 
             {currentTab === "listening" && (

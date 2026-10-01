@@ -2,117 +2,251 @@
 
 import { useState } from "react";
 import { PronunciationUnit, PronunciationSound } from "@/types/database";
-import { speakText } from "@/lib/speech";
-import { ArrowLeft, Volume2, Mic, Info, MessageSquare } from "lucide-react";
+import { playNativeAudio, speakText } from "@/lib/speech";
+import {
+  ArrowLeft,
+  Volume2,
+  Mic,
+  Info,
+  MessageSquare,
+  Home,
+  CheckCircle2,
+  Sparkles,
+  Headphones,
+  Globe
+} from "lucide-react";
 
 interface PronunciationTabProps {
   units: PronunciationUnit[];
+  onBackToHome?: () => void;
 }
 
-export function PronunciationTab({ units }: PronunciationTabProps) {
+export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps) {
   const [selectedUnit, setSelectedUnit] = useState<PronunciationUnit | null>(null);
   const [selectedSoundIndex, setSelectedSoundIndex] = useState(0);
+  const [accent, setAccent] = useState<"uk" | "us">("uk");
+  const [currentlyPlayingWord, setCurrentlyPlayingWord] = useState<string | null>(null);
 
-  // MÀN HÌNH CHI TIẾT BÀI PHÁT ÂM
+  const handlePlayWord = (word: string, customAccent?: "uk" | "us") => {
+    const acc = customAccent || accent;
+    setCurrentlyPlayingWord(word);
+    playNativeAudio(word, acc).finally(() => {
+      setTimeout(() => setCurrentlyPlayingWord(null), 1200);
+    });
+  };
+
+  // ==========================================
+  // VIEW 1: CHI TIẾT 1 BÀI PHÁT ÂM (UNIT DETAIL)
+  // ==========================================
   if (selectedUnit) {
     const sounds = selectedUnit.sounds || [];
     const currentSound: PronunciationSound | undefined = sounds[selectedSoundIndex];
 
+    // Pick representative words for this sound from minimal pairs
+    const sampleWords = currentSound?.minimal_pairs?.map((p) => p.word1).slice(0, 5) || [];
+
     return (
-      <div className="p-4 space-y-4 pb-24 animate-in fade-in duration-200">
-        {/* Top bar */}
-        <div className="flex items-center space-x-2">
+      <div className="p-4 space-y-4 pb-28 animate-in fade-in duration-200">
+        {/* THANH ĐIỀU HƯỚNG TRÊN CÙNG - NÚT QUAY LẠI RÕ RÀNG */}
+        <div className="flex items-center justify-between gap-2 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-sm">
           <button
             onClick={() => setSelectedUnit(null)}
-            className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold text-xs transition-all"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 text-rose-600" />
+            <span>Danh sách âm</span>
           </button>
-          <div className="flex-1 min-w-0">
-            <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider">
-              Unit {selectedUnit.unit_number} Phát âm
-            </span>
-            <h2 className="font-extrabold text-base text-slate-900 truncate">
-              {selectedUnit.sound_pair}
-            </h2>
+
+          {/* Toggle chọn giọng Anh - Anh (UK) hoặc Anh - Mỹ (US) */}
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
+            <button
+              onClick={() => setAccent("uk")}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1 ${
+                accent === "uk"
+                  ? "bg-white text-blue-700 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <span>🇬🇧 UK</span>
+            </button>
+            <button
+              onClick={() => setAccent("us")}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center space-x-1 ${
+                accent === "us"
+                  ? "bg-white text-indigo-700 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <span>🇺🇸 US</span>
+            </button>
           </div>
+
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="flex items-center space-x-1 px-2.5 py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 font-semibold text-xs transition-colors"
+              title="Về Trang chủ"
+            >
+              <Home className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Sound tabs */}
+        {/* Tiêu đề Unit */}
+        <div>
+          <span className="text-[11px] font-bold text-rose-600 uppercase tracking-wider bg-rose-50 px-2.5 py-0.5 rounded-full">
+            Unit {selectedUnit.unit_number} • Phát âm chuẩn
+          </span>
+          <h2 className="font-extrabold text-lg text-slate-900 mt-1 leading-snug">
+            {selectedUnit.sound_pair}
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">{selectedUnit.title}</p>
+        </div>
+
+        {/* Bộ chọn âm tab (Sound tabs) */}
         {sounds.length > 0 && (
-          <div className="flex bg-slate-100 p-1 rounded-xl space-x-1 overflow-x-auto no-scrollbar">
-            {sounds.map((snd, idx) => (
-              <button
-                key={snd.id}
-                onClick={() => setSelectedSoundIndex(idx)}
-                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-black transition-all whitespace-nowrap ${
-                  selectedSoundIndex === idx
-                    ? "bg-white text-rose-600 shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {snd.ipa}
-              </button>
-            ))}
+          <div className="flex bg-slate-100 p-1.5 rounded-2xl space-x-1.5 overflow-x-auto no-scrollbar">
+            {sounds.map((snd, idx) => {
+              const isSelected = selectedSoundIndex === idx;
+              return (
+                <button
+                  key={snd.id}
+                  onClick={() => setSelectedSoundIndex(idx)}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap flex items-center justify-center space-x-1.5 ${
+                    isSelected
+                      ? "bg-rose-600 text-white shadow-md shadow-rose-600/25"
+                      : "text-slate-600 hover:text-slate-900 bg-white/60"
+                  }`}
+                >
+                  <Volume2 className="w-3.5 h-3.5" />
+                  <span>Âm {snd.ipa}</span>
+                </button>
+              );
+            })}
           </div>
         )}
 
         {currentSound ? (
           <div className="space-y-4">
-            {/* Khẩu hình & Hướng dẫn */}
-            <div className="bg-rose-50/60 border border-rose-100 rounded-2xl p-4 space-y-2">
+            {/* HERO CARD: PHÁT ÂM CHUẨN GIỌNG BẢN XỨ */}
+            <div className="bg-gradient-to-br from-rose-50 via-white to-orange-50 border border-rose-200/80 rounded-2xl p-4 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white font-extrabold flex items-center justify-center text-lg shadow-md shadow-rose-500/25 font-mono">
+                    {currentSound.ipa}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">
+                      Nghe phát âm chuẩn giọng bản xứ
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Đang chọn: Giọng {accent === "uk" ? "Anh - Anh (UK 🇬🇧)" : "Anh - Mỹ (US 🇺🇸)"}
+                    </p>
+                  </div>
+                </div>
+
+                {sampleWords.length > 0 && (
+                  <button
+                    onClick={() => handlePlayWord(sampleWords[0])}
+                    className="w-11 h-11 rounded-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white flex items-center justify-center shadow-lg shadow-rose-600/30 transition-all"
+                    title="Bấm nghe ngay âm này"
+                  >
+                    <Volume2 className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Các từ mẫu tiêu biểu chứa âm này */}
+              {sampleWords.length > 0 && (
+                <div className="pt-2 border-t border-rose-100">
+                  <p className="text-[11px] font-bold text-slate-500 mb-1.5">
+                    Bấm vào từng từ để nghe âm {currentSound.ipa} trong từ vựng:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {sampleWords.map((w) => {
+                      const isPlaying = currentlyPlayingWord === w;
+                      return (
+                        <button
+                          key={w}
+                          onClick={() => handlePlayWord(w)}
+                          className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition-all active:scale-95 ${
+                            isPlaying
+                              ? "bg-rose-600 border-rose-600 text-white shadow-sm"
+                              : "bg-white border-slate-200 text-slate-800 hover:border-rose-300 hover:bg-rose-50/50"
+                          }`}
+                        >
+                          <Volume2 className={`w-3.5 h-3.5 ${isPlaying ? "text-white" : "text-rose-500"}`} />
+                          <span>{w}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Khẩu hình & Hướng dẫn miệng, lưỡi */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2 shadow-sm">
               <div className="flex items-center space-x-2 text-rose-600">
                 <Info className="w-4 h-4 shrink-0" />
                 <h3 className="text-xs font-bold uppercase tracking-wider">
                   Khẩu hình & Cách phát âm âm {currentSound.ipa}
                 </h3>
               </div>
-              <p className="text-xs font-medium text-slate-800 leading-relaxed">
+              <p className="text-xs font-medium text-slate-800 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
                 {currentSound.mouth_guide}
               </p>
             </div>
 
-            {/* Bảng cặp từ tương phản Minimal Pairs */}
+            {/* Bảng cặp từ tương phản (Minimal Pairs) */}
             {currentSound.minimal_pairs && currentSound.minimal_pairs.length > 0 && (
               <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                    Cặp từ so sánh (Minimal Pairs)
+                    Cặp từ so sánh đối chiếu (Minimal Pairs)
                   </h3>
                   <span className="text-[11px] text-slate-400">Bấm loa để nghe so sánh</span>
                 </div>
 
                 <div className="divide-y divide-slate-100">
                   {currentSound.minimal_pairs.map((pair, idx) => (
-                    <div key={idx} className="py-2.5 flex items-center justify-between">
+                    <div key={idx} className="py-2.5 flex items-center justify-between gap-2">
                       {/* Từ 1 */}
                       <button
-                        onClick={() => speakText(pair.word1)}
-                        className="flex-1 text-left p-1.5 rounded-lg hover:bg-slate-50 transition-colors group flex items-center space-x-2"
+                        onClick={() => handlePlayWord(pair.word1)}
+                        className={`flex-1 text-left p-2 rounded-xl transition-all border flex items-center justify-between ${
+                          currentlyPlayingWord === pair.word1
+                            ? "bg-rose-50 border-rose-300"
+                            : "bg-slate-50/60 border-slate-200 hover:bg-slate-100"
+                        }`}
                       >
-                        <Volume2 className="w-4 h-4 text-rose-500 shrink-0 group-hover:scale-110 transition-transform" />
                         <div>
                           <p className="font-extrabold text-sm text-slate-900 capitalize">
                             {pair.word1}
                           </p>
                           <p className="text-[11px] font-mono text-slate-500">{pair.ipa1}</p>
                         </div>
+                        <Volume2 className="w-4 h-4 text-rose-500 shrink-0" />
                       </button>
 
-                      <span className="text-xs font-bold text-slate-300 px-2">vs</span>
+                      <span className="text-xs font-bold text-slate-300 shrink-0">vs</span>
 
                       {/* Từ 2 */}
                       <button
-                        onClick={() => speakText(pair.word2)}
-                        className="flex-1 text-left p-1.5 rounded-lg hover:bg-slate-50 transition-colors group flex items-center space-x-2"
+                        onClick={() => handlePlayWord(pair.word2)}
+                        className={`flex-1 text-left p-2 rounded-xl transition-all border flex items-center justify-between ${
+                          currentlyPlayingWord === pair.word2
+                            ? "bg-blue-50 border-blue-300"
+                            : "bg-slate-50/60 border-slate-200 hover:bg-slate-100"
+                        }`}
                       >
-                        <Volume2 className="w-4 h-4 text-blue-500 shrink-0 group-hover:scale-110 transition-transform" />
                         <div>
                           <p className="font-extrabold text-sm text-slate-900 capitalize">
                             {pair.word2}
                           </p>
                           <p className="text-[11px] font-mono text-slate-500">{pair.ipa2}</p>
                         </div>
+                        <Volume2 className="w-4 h-4 text-blue-500 shrink-0" />
                       </button>
                     </div>
                   ))}
@@ -124,21 +258,22 @@ export function PronunciationTab({ units }: PronunciationTabProps) {
             {currentSound.example_sentences && currentSound.example_sentences.length > 0 && (
               <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
                 <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
-                  Câu luyện tập mẫu kèm IPA
+                  Câu luyện tập thực tế kèm phiên âm IPA
                 </h3>
                 <div className="space-y-2.5">
                   {currentSound.example_sentences.map((ex, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-slate-50 rounded-xl flex items-start justify-between space-x-2"
+                      className="p-3 bg-slate-50 rounded-xl flex items-start justify-between space-x-2 border border-slate-100"
                     >
                       <div className="flex-1">
                         <p className="text-xs font-bold text-slate-900">&ldquo;{ex.sentence}&rdquo;</p>
                         <p className="text-[11px] font-mono text-blue-600 mt-0.5">{ex.ipa}</p>
                       </div>
                       <button
-                        onClick={() => speakText(ex.sentence)}
-                        className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-700 hover:text-blue-600 flex items-center justify-center shrink-0 transition-colors shadow-2xs"
+                        onClick={() => handlePlayWord(ex.sentence)}
+                        className="w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center shrink-0 transition-colors shadow-2xs active:scale-95"
+                        title="Nghe cả câu"
                       >
                         <Volume2 className="w-4 h-4" />
                       </button>
@@ -148,41 +283,109 @@ export function PronunciationTab({ units }: PronunciationTabProps) {
               </div>
             )}
 
-            {/* Hội thoại ứng dụng */}
+            {/* Đoạn hội thoại ứng dụng thực tế */}
             {selectedUnit.dialogue && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-2">
-                <div className="flex items-center space-x-2 text-indigo-600 mb-1">
-                  <MessageSquare className="w-4 h-4" />
-                  <h3 className="font-bold text-xs uppercase tracking-wider">Đoạn hội thoại thực hành</h3>
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-indigo-600">
+                    <MessageSquare className="w-4 h-4" />
+                    <h3 className="font-bold text-xs uppercase tracking-wider">
+                      Hội thoại mẫu chứa cặp âm
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => handlePlayWord(selectedUnit.dialogue!)}
+                    className="text-xs font-bold text-indigo-600 hover:underline flex items-center space-x-1"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" />
+                    <span>Nghe hội thoại</span>
+                  </button>
                 </div>
-                <div className="bg-indigo-50/40 p-3 rounded-xl border border-indigo-100/60 whitespace-pre-line text-xs font-medium text-slate-700 leading-relaxed font-sans">
+                <div className="p-3.5 bg-indigo-50/40 border border-indigo-100 rounded-xl text-xs text-slate-800 leading-relaxed whitespace-pre-line font-medium">
                   {selectedUnit.dialogue}
                 </div>
               </div>
             )}
           </div>
-        ) : (
-          <div className="text-center py-10 text-xs text-slate-400">
-            Chưa có chi tiết âm cho Unit này.
-          </div>
-        )}
+        ) : null}
+
+        {/* NÚT QUAY LẠI PHÍA DƯỚI CÙNG (DỄ BẤM TRÊN ĐIỆN THOẠI) */}
+        <div className="pt-2 flex items-center space-x-3">
+          <button
+            onClick={() => setSelectedUnit(null)}
+            className="flex-1 py-3 px-4 rounded-xl bg-slate-900 text-white hover:bg-slate-800 font-bold text-xs flex items-center justify-center space-x-2 shadow-sm transition-all active:scale-98"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Quay lại danh sách âm</span>
+          </button>
+
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="py-3 px-4 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs flex items-center justify-center space-x-1.5 hover:bg-slate-50 active:scale-98"
+            >
+              <Home className="w-4 h-4" />
+              <span>Trang chủ</span>
+            </button>
+          )}
+        </div>
       </div>
     );
   }
 
-  // DANH SÁCH 11 UNITS PHÁT ÂM
+  // ==========================================
+  // VIEW 2: DANH SÁCH 11 BÀI PHÁT ÂM (LIST VIEW)
+  // ==========================================
   return (
-    <div className="p-4 space-y-4 pb-24 animate-in fade-in duration-200">
+    <div className="p-4 space-y-4 pb-28 animate-in fade-in duration-200">
+      {/* HEADER CÓ NÚT QUAY LẠI TRANG CHỦ */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 leading-tight">Giáo trình phát âm</h2>
-          <p className="text-xs text-slate-500">11 Units cặp âm đối chiếu & khẩu hình</p>
+        <div className="flex items-center space-x-2">
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors active:scale-95"
+              title="Quay lại Trang chủ"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div>
+            <h2 className="text-base font-extrabold text-slate-900 leading-tight">
+              Luyện phát âm chuẩn IPA
+            </h2>
+            <p className="text-xs text-slate-500">Giáo trình 11 Units Cặp âm đối chiếu</p>
+          </div>
         </div>
-        <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
-          11 Units
-        </span>
+
+        {onBackToHome && (
+          <button
+            onClick={onBackToHome}
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 text-xs font-semibold transition-colors"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Trang chủ</span>
+          </button>
+        )}
       </div>
 
+      {/* Banner giới thiệu phát âm chuẩn */}
+      <div className="bg-gradient-to-br from-rose-600 to-pink-600 rounded-2xl p-4 text-white shadow-md shadow-rose-500/15">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center space-x-2">
+            <Mic className="w-5 h-5 text-rose-200" />
+            <h3 className="font-bold text-sm">Âm chuẩn bản xứ Anh - Anh & Anh - Mỹ</h3>
+          </div>
+          <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-full">
+            {units.length} Units
+          </span>
+        </div>
+        <p className="text-xs text-rose-100 leading-relaxed">
+          Phân biệt từng cặp âm dễ nhầm lẫn thông qua bảng Minimal Pairs, khẩu hình và âm thanh trực tiếp.
+        </p>
+      </div>
+
+      {/* Danh sách 11 Units phát âm */}
       <div className="space-y-2.5">
         {units.map((unit) => (
           <button
@@ -191,20 +394,26 @@ export function PronunciationTab({ units }: PronunciationTabProps) {
               setSelectedUnit(unit);
               setSelectedSoundIndex(0);
             }}
-            className="w-full text-left bg-white border border-slate-200 hover:border-rose-300 rounded-2xl p-4 shadow-sm active:scale-[0.99] transition-all flex items-center justify-between space-x-3"
+            className="w-full text-left bg-white border border-slate-200/90 hover:border-rose-400 rounded-2xl p-4 shadow-sm active:scale-[0.99] transition-all flex items-center justify-between space-x-3 group"
           >
             <div className="flex items-center space-x-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 font-black flex items-center justify-center shrink-0 text-sm">
-                U{unit.unit_number}
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 font-extrabold flex items-center justify-center shrink-0 text-sm group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                {unit.unit_number}
               </div>
               <div className="min-w-0">
-                <h3 className="font-extrabold text-slate-900 text-sm truncate font-mono">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600">
                   {unit.sound_pair}
-                </h3>
-                <p className="text-[11px] text-slate-500 truncate">{unit.title}</p>
+                </span>
+                <h3 className="font-bold text-slate-900 text-sm truncate mt-0.5">{unit.title}</h3>
+                <p className="text-[11px] text-slate-500 truncate mt-0.5 line-clamp-1">
+                  {unit.guide_summary}
+                </p>
               </div>
             </div>
-            <span className="text-xs font-semibold text-rose-600 shrink-0">Luyện ➔</span>
+
+            <span className="text-xs font-bold text-rose-600 shrink-0 group-hover:translate-x-0.5 transition-transform">
+              Luyện âm ➔
+            </span>
           </button>
         ))}
       </div>
