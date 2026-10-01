@@ -111,9 +111,21 @@ export async function saveVocabularyStatus(
 
 export async function fetchPronunciationUnits(): Promise<PronunciationUnit[]> {
   try {
-    const { data, error } = await getSupabase().from("pronunciation_units").select("*, sounds:pronunciation_sounds(*)").order("unit_number");
+    const { data, error } = await getSupabase()
+      .from("pronunciation_units")
+      .select("*, sounds:pronunciation_sounds(*)")
+      .order("unit_number");
+
     if (!error && data && data.length > 0) {
-      return data as PronunciationUnit[];
+      return data.map((u: any) => {
+        if (!u.sounds || u.sounds.length === 0) {
+          const local = PRONUNCIATION_UNITS.find((p) => p.unit_number === u.unit_number);
+          if (local && local.sounds && local.sounds.length > 0) {
+            return { ...u, sounds: local.sounds };
+          }
+        }
+        return u;
+      }) as PronunciationUnit[];
     }
   } catch {}
   return PRONUNCIATION_UNITS;
