@@ -583,7 +583,7 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                       </h3>
                     </div>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      {currentSection.categorizeExercise.instruction}
+                      {currentSection.categorizeExercise.instruction} Bấm nút loa để nghe từ và chọn âm ngắn hay dài (phiên âm chuẩn sẽ mở khóa sau khi bạn chọn).
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -645,9 +645,15 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                                   <span className="font-extrabold text-base text-slate-900 tracking-tight">
                                     {cw.word}
                                   </span>
-                                  <span className="text-xs font-mono text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200">
-                                    {cw.ipa}
-                                  </span>
+                                  {isAnswered ? (
+                                    <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 animate-in fade-in">
+                                      {cw.ipa}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200/90 font-mono">
+                                      /...?/
+                                    </span>
+                                  )}
                                 </div>
                                 {cw.meaning_vi && (
                                   <p className="text-xs text-slate-500 mt-0.5 font-medium">
