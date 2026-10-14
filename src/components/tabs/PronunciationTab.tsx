@@ -68,6 +68,7 @@ interface PronunciationTabProps {
 export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps) {
   const [selectedUnit, setSelectedUnit] = useState<PronunciationUnit | null>(null);
   const [selectedSoundIndex, setSelectedSoundIndex] = useState(0);
+  const [selectedSectionIndex, setSelectedSectionIndex] = useState(0);
   const [accent, setAccent] = useState<"uk" | "us">("uk");
   const [activeSubTab, setActiveSubTab] = useState<"learn" | "practice">("learn");
   const [currentlyPlayingWord, setCurrentlyPlayingWord] = useState<string | null>(null);
@@ -109,6 +110,8 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
 
     const unitExercise: UnitExercises | undefined =
       PRONUNCIATION_EXERCISES[selectedUnit.unit_number];
+    const sections = unitExercise?.sections || [];
+    const currentSection = sections[selectedSectionIndex] || sections[0];
 
     return (
       <div className="p-4 space-y-4 pb-28 animate-in fade-in duration-200">
@@ -384,7 +387,12 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
 
             {/* Nút bấm chuyển sang Bài tập */}
             <button
-              onClick={() => setActiveSubTab("practice")}
+              onClick={() => {
+                if (selectedSoundIndex >= 2 && sections.length > 1) {
+                  setSelectedSectionIndex(1);
+                }
+                setActiveSubTab("practice");
+              }}
               className="w-full py-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-extrabold text-xs flex items-center justify-center space-x-2 hover:bg-rose-100 transition-colors shadow-xs"
             >
               <Award className="w-4 h-4" />
@@ -396,20 +404,74 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
           /* SUB-TAB 2: BÀI TẬP THỰC HÀNH TƯƠNG TÁC (EXERCISES)     */
           /* ==================================================== */
           <div className="space-y-5 animate-in fade-in duration-150">
-            {unitExercise ? (
+            {/* THANH CHỌN PHẦN BÀI TẬP (NẾU UNIT CÓ NHIỀU CẶP ÂM - VD: UNIT 1 CÓ /i:/-/ɪ/ VÀ /u:/-/ʊ/) */}
+            {sections.length > 1 && (
+              <div className="bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-xs space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center space-x-1.5 text-slate-700">
+                    <BookOpen className="w-3.5 h-3.5 text-rose-600" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Chọn cặp âm bài tập:
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
+                    {sections.length} phần bài tập
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {sections.map((sec, idx) => {
+                    const isSelected = selectedSectionIndex === idx;
+                    return (
+                      <button
+                        key={sec.id}
+                        onClick={() => setSelectedSectionIndex(idx)}
+                        className={`p-2.5 rounded-xl text-left border transition-all ${
+                          isSelected
+                            ? "bg-rose-50/70 border-rose-300 ring-2 ring-rose-500/20 text-rose-950 shadow-xs"
+                            : "bg-slate-50 border-slate-200 hover:bg-white text-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`font-black text-sm tracking-tight ${
+                              isSelected ? "text-rose-700" : "text-slate-800"
+                            }`}
+                          >
+                            {sec.soundPair}
+                          </span>
+                          {isSelected && (
+                            <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                          )}
+                        </div>
+                        <p className="text-[11px] font-medium text-slate-500 line-clamp-1 mt-0.5">
+                          {sec.title}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {currentSection ? (
               <>
                 {/* BÀI TẬP 1: NGHE & PHÂN BIỆT CẶP ÂM */}
-                {unitExercise.listeningQuizzes.length > 0 && (
+                {currentSection.listeningQuizzes.length > 0 && (
                   <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 text-rose-600">
                         <Headphones className="w-4 h-4" />
                         <h3 className="font-extrabold text-sm uppercase tracking-wider">
-                          Bài 1: Nghe & Phân biệt cặp âm
+                          Bài 1: Nghe & Phân biệt cặp âm ({currentSection.soundPair})
                         </h3>
                       </div>
                       <span className="text-[11px] text-slate-500 font-bold bg-slate-100 px-2.5 py-0.5 rounded-full">
-                        {Object.keys(quizAnswers).length}/{unitExercise.listeningQuizzes.length} câu
+                        {
+                          currentSection.listeningQuizzes.filter(
+                            (q) => quizAnswers[q.id] !== undefined
+                          ).length
+                        }
+                        /{currentSection.listeningQuizzes.length} câu
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 leading-relaxed">
@@ -417,7 +479,7 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                     </p>
 
                     <div className="space-y-3 pt-1">
-                      {unitExercise.listeningQuizzes.map((quiz, qIdx) => {
+                      {currentSection.listeningQuizzes.map((quiz, qIdx) => {
                         const selected = quizAnswers[quiz.id];
                         const isAnswered = selected !== undefined;
                         const isCorrect = selected === quiz.correctWord;
@@ -512,24 +574,23 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                 )}
 
                 {/* BÀI TẬP 2: PHÂN LOẠI TỪ VỰNG VÀO CỘT ÂM (CATEGORIZE WORDS) */}
-                {unitExercise.categorizeExercise && (
+                {currentSection.categorizeExercise && (
                   <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5">
                     <div className="flex items-center space-x-2 text-indigo-600">
                       <Sparkles className="w-4 h-4" />
                       <h3 className="font-extrabold text-sm uppercase tracking-wider">
-                        {unitExercise.categorizeExercise.title}
+                        Bài 2: {currentSection.categorizeExercise.title}
                       </h3>
                     </div>
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      {unitExercise.categorizeExercise.instruction}
+                      {currentSection.categorizeExercise.instruction}
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      {unitExercise.categorizeExercise.words.map((cw) => {
+                      {currentSection.categorizeExercise.words.map((cw) => {
                         const userCat = categorizeAnswers[cw.word];
                         const isCorrectA = userCat === "A" && cw.category === "A";
                         const isCorrectB = userCat === "B" && cw.category === "B";
-                        const isWrong = userCat && userCat !== cw.category;
 
                         return (
                           <div
@@ -569,7 +630,7 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                                     : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                                 }`}
                               >
-                                {unitExercise.categorizeExercise?.categoryA}
+                                {currentSection.categorizeExercise?.categoryA}
                               </button>
 
                               <button
@@ -587,7 +648,7 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                                     : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                                 }`}
                               >
-                                {unitExercise.categorizeExercise?.categoryB}
+                                {currentSection.categorizeExercise?.categoryB}
                               </button>
                             </div>
                           </div>
@@ -598,19 +659,18 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                 )}
 
                 {/* BÀI TẬP 3: ĐIỀN TỪ VÀO CÂU (FILL IN THE BLANKS) */}
-                {unitExercise.fillBlankExercises.length > 0 && (
+                {currentSection.fillBlankExercises.length > 0 && (
                   <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3.5">
                     <div className="flex items-center space-x-2 text-emerald-600">
                       <CheckCircle2 className="w-4 h-4" />
                       <h3 className="font-extrabold text-sm uppercase tracking-wider">
-                        Bài 3: Điền từ chuẩn vào câu
+                        Bài 3: Điền từ chuẩn vào câu ({currentSection.soundPair})
                       </h3>
                     </div>
 
                     <div className="space-y-3 pt-1">
-                      {unitExercise.fillBlankExercises.map((fb, fbIdx) => {
+                      {currentSection.fillBlankExercises.map((fb, fbIdx) => {
                         const userChoice = fillBlankAnswers[fb.id];
-                        const isCorrect = userChoice === fb.correctAnswer;
 
                         return (
                           <div
@@ -674,16 +734,16 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                 )}
 
                 {/* BÀI TẬP 4: THỬ THÁCH LÍU LƯỠI & NGỮ ĐIỆU */}
-                {unitExercise.tongueTwisters && unitExercise.tongueTwisters.length > 0 && (
+                {currentSection.tongueTwisters && currentSection.tongueTwisters.length > 0 && (
                   <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 shadow-sm space-y-3">
                     <div className="flex items-center space-x-2 text-amber-700">
                       <Mic className="w-4 h-4" />
                       <h3 className="font-extrabold text-sm uppercase tracking-wider">
-                        Thử thách Líu lưỡi & Ngữ điệu (Tongue Twister)
+                        Thử thách Líu lưỡi & Ngữ điệu ({currentSection.soundPair})
                       </h3>
                     </div>
 
-                    {unitExercise.tongueTwisters.map((tt, ttIdx) => (
+                    {currentSection.tongueTwisters.map((tt, ttIdx) => (
                       <div
                         key={ttIdx}
                         className="bg-white/80 p-3.5 rounded-xl border border-amber-200/80 space-y-2"
@@ -701,7 +761,7 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                           className="w-full py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center justify-center space-x-1.5 shadow-sm active:scale-98 transition-all"
                         >
                           <Volume2 className="w-4 h-4" />
-                          <span>Nghe phát âm mẫu cả câu líu lưỡi</span>
+                          <span>Nghe phát âm mẫu cả câu</span>
                         </button>
                       </div>
                     ))}
@@ -826,6 +886,7 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                   onClick={() => {
                     setSelectedUnit(unit);
                     setSelectedSoundIndex(0);
+                    setSelectedSectionIndex(0);
                     setActiveSubTab("learn");
                   }}
                   className="flex items-center space-x-3 min-w-0 flex-1 cursor-pointer"
@@ -869,6 +930,7 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                 onClick={() => {
                   setSelectedUnit(unit);
                   setSelectedSoundIndex(0);
+                  setSelectedSectionIndex(0);
                   setActiveSubTab("learn");
                 }}
                 className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs cursor-pointer hover:text-rose-600 transition-colors"
