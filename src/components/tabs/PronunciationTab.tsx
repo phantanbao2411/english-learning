@@ -586,35 +586,79 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                       {currentSection.categorizeExercise.instruction}
                     </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                       {currentSection.categorizeExercise.words.map((cw) => {
                         const userCat = categorizeAnswers[cw.word];
-                        const isCorrectA = userCat === "A" && cw.category === "A";
-                        const isCorrectB = userCat === "B" && cw.category === "B";
+                        const isAnswered = userCat !== undefined;
+                        const isChosenA = userCat === "A";
+                        const isChosenB = userCat === "B";
+                        const isTargetA = cw.category === "A";
+                        const isTargetB = cw.category === "B";
+
+                        let btnAClass =
+                          "bg-white border-slate-200 text-slate-700 hover:border-indigo-400";
+                        let btnBClass =
+                          "bg-white border-slate-200 text-slate-700 hover:border-indigo-400";
+
+                        if (isAnswered) {
+                          if (isTargetA) {
+                            btnAClass =
+                              "bg-emerald-600 border-emerald-600 text-white font-black shadow-xs";
+                          } else if (isChosenA) {
+                            btnAClass = "bg-rose-600 border-rose-600 text-white font-black";
+                          } else {
+                            btnAClass = "bg-slate-100 border-slate-200 text-slate-400 opacity-60";
+                          }
+
+                          if (isTargetB) {
+                            btnBClass =
+                              "bg-emerald-600 border-emerald-600 text-white font-black shadow-xs";
+                          } else if (isChosenB) {
+                            btnBClass = "bg-rose-600 border-rose-600 text-white font-black";
+                          } else {
+                            btnBClass = "bg-slate-100 border-slate-200 text-slate-400 opacity-60";
+                          }
+                        }
 
                         return (
                           <div
                             key={cw.word}
-                            className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-2"
+                            className={`p-3.5 bg-slate-50 border rounded-2xl flex flex-col justify-between space-y-3 transition-all ${
+                              isAnswered
+                                ? userCat === cw.category
+                                  ? "border-emerald-200 bg-emerald-50/20"
+                                  : "border-rose-200 bg-rose-50/20"
+                                : "border-slate-200 hover:border-slate-300"
+                            }`}
                           >
-                            <div className="flex items-center space-x-2 min-w-0">
+                            {/* Hàng 1: Nút loa + Tên từ vựng (To, Rõ Ràng) + Phiên âm IPA + Nghĩa tiếng Việt */}
+                            <div className="flex items-center space-x-3">
                               <button
                                 onClick={() => handlePlayWord(cw.word)}
-                                className="w-8 h-8 rounded-full bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 flex items-center justify-center shrink-0 shadow-2xs"
-                                title="Nghe từ này"
+                                className="w-10 h-10 rounded-xl bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 flex items-center justify-center shrink-0 shadow-xs active:scale-95 transition-transform"
+                                title="Bấm để nghe phát âm chuẩn"
                               >
-                                <Volume2 className="w-3.5 h-3.5" />
+                                <Volume2 className="w-4 h-4" />
                               </button>
-                              <div className="min-w-0">
-                                <p className="font-extrabold text-xs text-slate-900 truncate">
-                                  {cw.word}
-                                </p>
-                                <p className="text-[10px] text-slate-500 font-mono">{cw.ipa}</p>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2 flex-wrap">
+                                  <span className="font-extrabold text-base text-slate-900 tracking-tight">
+                                    {cw.word}
+                                  </span>
+                                  <span className="text-xs font-mono text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                                    {cw.ipa}
+                                  </span>
+                                </div>
+                                {cw.meaning_vi && (
+                                  <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                                    {cw.meaning_vi}
+                                  </p>
+                                )}
                               </div>
                             </div>
 
-                            {/* 2 NÚT CHỌN CỘT A HOẶC B */}
-                            <div className="flex items-center space-x-1 shrink-0">
+                            {/* Hàng 2: Hai nút lựa chọn to, rõ ràng, dễ bấm */}
+                            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60">
                               <button
                                 onClick={() =>
                                   setCategorizeAnswers((prev) => ({
@@ -622,15 +666,11 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                                     [cw.word]: "A",
                                   }))
                                 }
-                                className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
-                                  userCat === "A"
-                                    ? isCorrectA
-                                      ? "bg-emerald-600 text-white"
-                                      : "bg-rose-600 text-white"
-                                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
-                                }`}
+                                className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center space-x-1 ${btnAClass}`}
                               >
-                                {currentSection.categorizeExercise?.categoryA}
+                                <span>{currentSection.categorizeExercise?.categoryA}</span>
+                                {isAnswered && isTargetA && <span>✓</span>}
+                                {isAnswered && isChosenA && !isTargetA && <span>✗</span>}
                               </button>
 
                               <button
@@ -640,15 +680,11 @@ export function PronunciationTab({ units, onBackToHome }: PronunciationTabProps)
                                     [cw.word]: "B",
                                   }))
                                 }
-                                className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
-                                  userCat === "B"
-                                    ? isCorrectB
-                                      ? "bg-emerald-600 text-white"
-                                      : "bg-rose-600 text-white"
-                                    : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
-                                }`}
+                                className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center space-x-1 ${btnBClass}`}
                               >
-                                {currentSection.categorizeExercise?.categoryB}
+                                <span>{currentSection.categorizeExercise?.categoryB}</span>
+                                {isAnswered && isTargetB && <span>✓</span>}
+                                {isAnswered && isChosenB && !isTargetB && <span>✗</span>}
                               </button>
                             </div>
                           </div>
